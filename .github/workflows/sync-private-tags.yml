@@ -56,13 +56,14 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          SOURCE_TOKEN: ${{ secrets.MAIN_REPO_TOKEN }}
           RELEASE_REPO: ${{ github.repository }}
           REQUESTED_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
 
           requested_tag="${REQUESTED_TAG//[[:space:]]/}"
-          published_tags="$(gh api --paginate "repos/${RELEASE_REPO}/releases" --jq '.[].tag_name')"
+          published_tags="$(GH_TOKEN="$SOURCE_TOKEN" gh api --paginate "repos/${SOURCE_REPO}/releases" --jq '.[].tag_name')"
           active_titles="$(
             gh api "repos/${RELEASE_REPO}/actions/workflows/docker-image.yml/runs?per_page=100" \
               --jq '.workflow_runs[] | select(.status != "completed") | .display_title'

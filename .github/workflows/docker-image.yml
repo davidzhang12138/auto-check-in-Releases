@@ -10,7 +10,7 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: read
   packages: write
 
 concurrency:
@@ -87,7 +87,7 @@ jobs:
             type=raw,value=sha-${{ steps.source.outputs.short_sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.url=https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}
+            org.opencontainers.image.url=https://github.com/${{ env.SOURCE_REPO }}/releases/tag/${{ env.RELEASE_TAG }}
             org.opencontainers.image.version=${{ env.RELEASE_TAG }}
             org.opencontainers.image.revision=${{ steps.source.outputs.sha }}
 
@@ -110,10 +110,10 @@ jobs:
             COMMIT=${{ steps.source.outputs.sha }}
             BUILD_DATE=${{ steps.meta.outputs.created }}
 
-      - name: 创建公开 Release 标记
+      - name: 在私有源码仓库创建 Release 标记
         shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.MAIN_REPO_TOKEN }}
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
@@ -128,17 +128,17 @@ jobs:
             printf -- '- 多架构摘要：`%s`\n' "$IMAGE_DIGEST"
             printf -- '- 源码提交：`%s`\n' "$SOURCE_SHA"
             printf -- '- 平台：`linux/amd64`、`linux/arm64`\n\n'
-            printf '源码仓库保持私有；本仓库仅保存发布自动化和版本元数据。\n'
+            printf '镜像由公开仓库 [auto-check-in-Releases](https://github.com/%s) 的自动化构建发布。\n' "$GITHUB_REPOSITORY"
           } > "$notes_file"
 
-          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          if gh release view "$RELEASE_TAG" --repo "$SOURCE_REPO" >/dev/null 2>&1; then
             gh release edit "$RELEASE_TAG" \
-              --repo "$GITHUB_REPOSITORY" \
+              --repo "$SOURCE_REPO" \
               --title "$RELEASE_TAG" \
               --notes-file "$notes_file"
           else
             gh release create "$RELEASE_TAG" \
-              --repo "$GITHUB_REPOSITORY" \
+              --repo "$SOURCE_REPO" \
               --target main \
               --title "$RELEASE_TAG" \
               --notes-file "$notes_file"

@@ -6,9 +6,11 @@
 
 - `sync-private-tags` 每 5 分钟读取私有源码仓库的版本 Tag，也支持手动指定 Tag。
 - `docker-image` 检出指定的私有 Tag，构建 `linux/amd64`、`linux/arm64` 镜像并发布到 GHCR。
-- 构建成功后在本仓库创建同名 GitHub Release，作为已发布标记并记录源码提交、镜像摘要。
+- 构建成功后在**私有源码仓库**创建同名 GitHub Release，作为已发布标记并记录源码提交、镜像摘要；本仓库不保存任何 Release。
 
 私有源码仅在受信任的 GitHub-hosted runner 中临时检出，不会写入本公开仓库、公共缓存或公开构建产物。工作流不启用 GitHub Actions/Docker 构建缓存，也不生成 SBOM 或来源证明。Python 应用源码仅存在于仍为私有的 GHCR 镜像层中。
+
+跨仓库写私有 Release 需要一个对私有源码仓库有 `contents: write` 权限的 PAT，存为本仓库 secret `MAIN_REPO_TOKEN`。
 
 ## 镜像
 
